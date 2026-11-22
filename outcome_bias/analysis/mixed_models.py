@@ -2,6 +2,7 @@
 pre-registered). Results: docs/3_extra_analyses/results.md.
 
   python -m outcome_bias.analysis.mixed_models          # writes docs/3_extra_analyses/tables/mixed_models.csv
+  python -m outcome_bias.analysis.mixed_models --family gemini   # the Gemini models, to mixed_models_gemini.csv
 
 For each contrast (ending a vs ending b) and question, on every answer from the first run and the re-run:
 
@@ -20,6 +21,7 @@ Effect sizes:
   d_z    mean of per-scenario differences / their SD (the paired design used in the pre-registered analysis).
 """
 
+import argparse
 import warnings
 
 import numpy as np
@@ -27,10 +29,10 @@ import pandas as pd
 from statsmodels.regression.mixed_linear_model import MixedLM
 
 from outcome_bias.analysis.load import frame
+from outcome_bias.models import FAMILIES
 from outcome_bias.paths import EXTRA_TABLES
 
 OUT = EXTRA_TABLES
-MODELS = ("haiku", "sonnet", "opus")
 
 # (name, exp, run labels, version, a, b, questions)
 CONTRASTS = [
@@ -93,16 +95,21 @@ def fit_one_model(d, wordings):
     return r, ok, comps, total
 
 
-def run():
+def run(family="claude"):
+    models = FAMILIES[family]
     rows = []
     for name, exp, labels, version, a, b, questions in CONTRASTS:
-        df = frame(exp, labels)
+        df = frame(exp, labels, models=models)
+        if df.empty:
+            continue
+        present = tuple(m for m in models if m in set(df.model))
+        who_all = (("pooled",) if len(present) > 1 else ()) + present
         if version:
             df = df[df.version == version]
         for q in questions:
             d = _prepare(df[df.question == q], a, b)
             wordings = d.wording.nunique() > 1
-            for who in ("pooled",) + MODELS:
+            for who in who_all:
                 dd = d if who == "pooled" else d[d.model == who]
                 r, ok, comps, total = (fit_pooled if who == "pooled" else fit_one_model)(dd, wordings)
                 beta = r.fe_params["x"]
@@ -115,10 +122,17 @@ def run():
                       f"  d_av {d_av:+.2f}  d_z {d_z:+.2f}{'' if ok else '  (not converged)'}", flush=True)
     out = pd.DataFrame(rows)
     OUT.mkdir(parents=True, exist_ok=True)
-    out.to_csv(OUT / "mixed_models.csv", index=False, float_format="%.4f")
-    print(f"\nwrote {OUT / 'mixed_models.csv'}")
+    path = OUT / f"mixed_models{suffix(family)}.csv"
+    out.to_csv(path, index=False, float_format="%.4f")
+    print(f"\nwrote {path}")
     return out
 
 
+def suffix(family):
+    return "" if family == "claude" else f"_{family}"
+
+
 if __name__ == "__main__":
-    run()
+    p = argparse.ArgumentParser()
+    p.add_argument("--family", default="claude", choices=sorted(FAMILIES))
+    run(p.parse_args().family)

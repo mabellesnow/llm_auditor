@@ -16,10 +16,9 @@ from collections import defaultdict
 
 from outcome_bias import runlog
 from outcome_bias.analysis.load import load
+from outcome_bias.models import rank
 from outcome_bias.stats import boot, contrast, digits_for, fmt, unit_means
 from outcome_bias.verify import check_freeze
-
-MODEL_ORDER = ("haiku", "sonnet", "opus")
 
 # Primary contrast first in each list (worse ending minus better ending).
 CONTRASTS = {
@@ -33,10 +32,6 @@ COND_ORDER = {
     "e1": ("good", "none", "bad"), "e2": ("success", "omitted", "failure"), "e3": ("payoff", "omitted", "harm"),
     "e4": ("success", "none", "failure"), "e5": ("noharm", "none", "harm"),
 }
-
-
-def _model_rank(model):
-    return next((i for i, k in enumerate(MODEL_ORDER) if k in model), 9)
 
 
 def performance_did(R):
@@ -57,7 +52,7 @@ def performance_did(R):
 
 def report(rows):
     exp = rows[0]["exp"]
-    groups = sorted({(r["model"], r["reasoning"]) for r in rows}, key=lambda g: (_model_rank(g[0]), g[1]))
+    groups = sorted({(r["model"], r["reasoning"]) for r in rows}, key=lambda g: (rank(g[0]), g[1]))
     for model, reasoning in groups:
         R = [r for r in rows if r["model"] == model and r["reasoning"] == reasoning]
         thought = st.mean(r["thought"] for r in R)

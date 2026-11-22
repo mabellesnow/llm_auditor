@@ -68,7 +68,7 @@ The study id names its stimulus folder (`outcome_bias/stimuli/<id>/`, where it h
 uv sync
 ```
 
-Put your API key in `.env` as `ANTHROPIC_API_KEY=...` (and `OPENAI_API_KEY=...` for OpenAI models). Run every command from this folder: Inspect reads `.env` from where it starts.
+Put your API key in `.env` as `ANTHROPIC_API_KEY=...` (and `GEMINI_API_KEY=...` for Gemini models, `OPENAI_API_KEY=...` for OpenAI models). Gemini 4 Argon, Carbon and Neon need a Google project with billing on: on the free tier their quota is zero. Run every command from this folder: Inspect reads `.env` from where it starts.
 
 On Python 3.14 for macOS, `uv sync` can hide the editable install's `.pth` file. If you see `No module named 'outcome_bias'`, run:
 
@@ -86,7 +86,7 @@ This runs the study on Haiku, Sonnet and Opus in their main arm (the lowest reas
 
 | Option | Meaning |
 |---|---|
-| `--models haiku sonnet opus` | which models (see `models.py`) |
+| `--models haiku sonnet opus` | which models (see `models.py`), or a family: `claude` (the default), `gemini` |
 | `--arm main`, `medium` or `reasoning` | the reasoning setting |
 | `--label run2` | the run's label in the run index (use it for re-runs) |
 | `--set variant=ignore` | a study parameter (`followup_labelled_scale`: `variant`; `e4_buried_violation`: `n_filler`) |
@@ -109,6 +109,8 @@ python -m outcome_bias.analysis.follow_ups
 ```bash
 python -m outcome_bias.analysis.mixed_models
 ```
+
+The pre-registered analyses (`main_experiments`, `follow_ups`, `labelled_scale`) report every model that has a run. The extra analyses (`mixed_models`, `moderators`, `faithfulness`) cover Claude by default; pass `--family gemini` for the Gemini models, which writes its tables with a `_gemini` suffix.
 
 ```bash
 python -m outcome_bias.figures

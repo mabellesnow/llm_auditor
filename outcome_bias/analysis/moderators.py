@@ -2,6 +2,7 @@
 Results: docs/3_extra_analyses/results.md.
 
   python -m outcome_bias.analysis.moderators          # writes docs/3_extra_analyses/tables/moderators_*.csv
+  python -m outcome_bias.analysis.moderators --family gemini   # the Gemini models, to moderators_*_gemini.csv
 
 Per scenario and model (E3 borderline, first run and re-run pooled): the harm-minus-payoff effect on
 each question, and the no-ending violation score (how much room the verdict had to move).
@@ -10,6 +11,7 @@ other) and by who bears the harm (money, people). With 21 scenarios and 2 to 7 p
 show large differences only; tests are permutation tests that shuffle codes across scenarios.
 """
 
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -17,22 +19,24 @@ import pandas as pd
 import yaml
 
 from outcome_bias.analysis.load import frame
+from outcome_bias.models import CLAUDE, FAMILIES, ORDER
 from outcome_bias.paths import EXTRA_TABLES
 from outcome_bias.stats import boot
 
 OUT = EXTRA_TABLES
 CODES = Path(__file__).with_name("scenario_codes.yaml")  # analyst codes for each scenario
 QUESTIONS = ("violation", "blame", "accept", "quality", "risk")
-MODELS = ("haiku", "sonnet", "opus")
 
 
 def codes():
     return pd.DataFrame(yaml.safe_load(CODES.read_text())).set_index("id")
 
 
-def scenario_effects():
+def scenario_effects(models=CLAUDE):
     """One row per (model, scenario, question): harm - payoff, harm - none, and the no-ending violation score."""
-    df = frame("e3")
+    df = frame("e3", models=models)
+    if df.empty:
+        raise SystemExit(f"No E3 runs for {', '.join(models)} yet")
     df = df[df.version == "borderline"]
     cell = df.groupby(["model", "unit", "question", "cond"]).answer.mean().unstack("cond")
     eff = pd.DataFrame({"harm_payoff": cell["harm"] - cell["payoff"], "harm_none": cell["harm"] - cell["omitted"],
@@ -75,31 +79,36 @@ def ceiling(eff):
     """Correlation, across scenarios, between the no-ending violation score and the harm effect on the verdict."""
     out = []
     v = eff[eff.question == "violation"]
-    for model in MODELS:
+    for model in judged(eff):
         g = v[v.model == model]
         out.append(dict(model=model, r_harm_payoff=np.corrcoef(g.baseline_violation, g.harm_payoff)[0, 1],
                         r_harm_none=np.corrcoef(g.baseline_violation, g.harm_none)[0, 1]))
     return out
 
 
-def run():
-    eff = scenario_effects()
+def judged(eff):
+    return tuple(m for m in ORDER if m in set(eff.model))
+
+
+def run(family="claude"):
+    eff = scenario_effects(FAMILIES[family])
+    sfx = "" if family == "claude" else f"_{family}"
     OUT.mkdir(parents=True, exist_ok=True)
-    eff.to_csv(OUT / "moderators_scenario_effects.csv", index=False, float_format="%.3f")
+    eff.to_csv(OUT / f"moderators_scenario_effects{sfx}.csv", index=False, float_format="%.3f")
     rows, tests = [], []
     for column in ("rule_type", "harm_domain"):
         for q in QUESTIONS:
             rows += by_category(eff, column, q)
-            for model in MODELS:
+            for model in judged(eff):
                 rows += by_category(eff, column, q, model)
             stat, p = permutation_p(eff, column, q)
             tests.append(dict(code=column, question=q, spread=stat, p_permutation=p))
     cats = pd.DataFrame(rows)
-    cats.to_csv(OUT / "moderators_by_category.csv", index=False, float_format="%.3f")
+    cats.to_csv(OUT / f"moderators_by_category{sfx}.csv", index=False, float_format="%.3f")
     tests = pd.DataFrame(tests)
-    tests.to_csv(OUT / "moderators_tests.csv", index=False, float_format="%.4f")
+    tests.to_csv(OUT / f"moderators_tests{sfx}.csv", index=False, float_format="%.4f")
     ceil = pd.DataFrame(ceiling(eff))
-    ceil.to_csv(OUT / "moderators_ceiling.csv", index=False, float_format="%.3f")
+    ceil.to_csv(OUT / f"moderators_ceiling{sfx}.csv", index=False, float_format="%.3f")
 
     pd.set_option("display.width", 200)
     for column in ("rule_type", "harm_domain"):
@@ -118,4 +127,6 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    p = argparse.ArgumentParser()
+    p.add_argument("--family", default="claude", choices=sorted(FAMILIES))
+    run(p.parse_args().family)

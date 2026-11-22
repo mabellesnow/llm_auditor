@@ -8,11 +8,11 @@
   D  E3 with each rule's purpose stated: harm minus payoff, and its change from E3's first run
 """
 
+from outcome_bias import runlog
 from outcome_bias.analysis.load import answers, select
 from outcome_bias.stats import change, contrast, digits_for, excludes_zero, fmt, unit_means
 from outcome_bias.verify import check_freeze
 
-MODELS = ("haiku", "sonnet", "opus")
 
 # Part A: (exp, version, question, a, b, direction claimed in the first run)
 OPUS_CLAIMS = [
@@ -50,7 +50,7 @@ def part_a():
 
 def part_b():
     print("\n=== B. Instruction to ignore what happened afterwards: change in harm - payoff (violation) from E3 run 1")
-    for model in MODELS:
+    for model in runlog.judged():
         base = answers("run1", "e3", model)[0]
         cells = []
         for label in ("x1-labelled", "x1-ignore", "x1-ignore-run2"):
@@ -66,7 +66,7 @@ def part_c():
     pairs = [("noharm", "neutral"), ("harm", "neutral"), ("neutral", "none"), ("harm", "noharm"), ("noharm", "none")]
     for label in ("s2-e5_neutral", "s2-e5_neutral-run2"):
         print(f"\n  -- {label}")
-        for model in MODELS:
+        for model in runlog.judged():
             rows, bad = answers(label, "e5", model)
             if rows is None:
                 print(f"  {model}: not run yet")
@@ -81,7 +81,7 @@ def part_d():
     print("\n=== D. E3 with each rule's purpose stated, borderline versions")
     for label in ("s2-purpose", "s2-purpose-run2"):
         print(f"\n  -- {label}")
-        for model in MODELS:
+        for model in runlog.judged():
             rows, bad = answers(label, "e3", model)
             if rows is None:
                 print(f"  {model}: not run yet")

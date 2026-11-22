@@ -6,7 +6,7 @@ Unparsed answers are counted and left out, as pre-registered.
 
   load(paths)                  rows from given log files
   answers(label, exp, model)   rows for one labelled run in the run index
-  frame(exp, labels)           a pandas DataFrame over several runs, with a "label" column
+  frame(exp, labels, models)   a pandas DataFrame over several runs, with a "label" column
 """
 
 from functools import cache
@@ -14,6 +14,7 @@ from functools import cache
 from inspect_ai.log import read_eval_log
 
 from outcome_bias import runlog
+from outcome_bias.models import CLAUDE
 
 
 @cache
@@ -53,14 +54,16 @@ def answers(label, exp, model=None, arm="main"):
     return load(paths) if paths else (None, 0)
 
 
-def frame(exp, labels=("run1", "run2"), arm="main"):
+def frame(exp, labels=("run1", "run2"), arm="main", models=CLAUDE):
     """All parsed answers of one experiment over the given run labels, as a DataFrame.
-    Model names are shortened to haiku / sonnet / opus where they match."""
+    Only the given models (short names; Claude by default). The model column holds the short name."""
     import pandas as pd
 
     parts = []
     for label in labels:
         for run in runlog.find(label=label, exp=exp, arm=arm):
+            if run.model not in models:
+                continue
             rows, _ = _load_one(str(run.path))
             df = pd.DataFrame(list(rows))
             df["label"] = label

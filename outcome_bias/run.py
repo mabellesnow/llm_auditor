@@ -8,6 +8,7 @@ Examples
   python -m outcome_bias.run e3_consequences --models opus --label run2 --batch   # a rule 2 re-run
   python -m outcome_bias.run followup_labelled_scale --set variant=ignore --label x1-ignore --batch
   python -m outcome_bias.run e5_intent --models haiku --limit 3           # smoke test, not recorded
+  python -m outcome_bias.run e3_consequences --models gemini --batch      # the three Gemini 4 models
 
 Each model runs in turn; the chain stops at the first run that fails (for example when the API credit
 runs out). A run that stops part-way is recorded as "partial". Smoke tests (--limit) go to
@@ -22,7 +23,7 @@ import sys
 from inspect_ai.log import read_eval_log
 
 from outcome_bias import runlog
-from outcome_bias.models import CLAUDE, MODELS
+from outcome_bias.models import CLAUDE, FAMILIES, MODELS
 from outcome_bias.paths import LOGS, ROOT
 from outcome_bias.studies import STUDIES
 
@@ -48,7 +49,8 @@ def run_one(study, model_name, arm, label, epochs, batch, params, limit=None):
     print(f"\n>>> {study.id} | {model_name} | arm {arm} ({model.arms[arm]}) | label {label}", flush=True)
     before = set(log_dir.glob("*.eval"))
     out = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True)
-    new = sorted(set(log_dir.glob("*.eval")) - before, key=lambda p: p.stat().st_mtime)
+    new = sorted((p for p in set(log_dir.glob("*.eval")) - before if _is_ours(p, study.id, model.provider_id)),
+                 key=lambda p: p.stat().st_mtime)  # another run may be writing to the same folder
     if not new:  # Inspect never got as far as writing a log
         print(out.stdout[-2000:], out.stderr[-2000:], sep="\n")
         return "failed", ""
@@ -58,6 +60,14 @@ def run_one(study, model_name, arm, label, epochs, batch, params, limit=None):
         runlog.record(label if status == "ok" else status, study.exp, arm, model_name, log)
     print(f"    {status}: {log}", flush=True)
     return status, log
+
+
+def _is_ours(path, task, provider_id):
+    try:
+        e = read_eval_log(str(path), header_only=True).eval
+    except Exception:  # a log another run is still writing
+        return False
+    return e.task == task and e.model == provider_id
 
 
 def _status(path):
@@ -71,7 +81,8 @@ def _status(path):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("study", choices=sorted(STUDIES))
-    p.add_argument("--models", nargs="+", default=list(CLAUDE), choices=sorted(MODELS))
+    p.add_argument("--models", nargs="+", default=list(CLAUDE), choices=sorted(MODELS) + sorted(FAMILIES),
+                   help="model names, or a family: " + ", ".join(FAMILIES) + " (default claude)")
     p.add_argument("--arm", default="main", choices=["main", "medium", "reasoning"])
     p.add_argument("--label", default="run1", help="run label in the run index (default run1)")
     p.add_argument("--epochs", type=int, default=0, help="samples per item (default: the study's)")
@@ -84,7 +95,8 @@ def main(argv=None):
     unknown = set(params) - set(study.params)
     if unknown:
         raise SystemExit(f"{study.id} has no parameter {sorted(unknown)} (has: {sorted(study.params) or 'none'})")
-    for m in a.models:
+    models = [m for name in a.models for m in FAMILIES.get(name, (name,))]
+    for m in models:
         status, log = run_one(study, m, a.arm, a.label, a.epochs, a.batch, params, a.limit)
         if status == "failed":
             sys.exit(f"STOPPING: {study.id} on {m} failed ({log or 'no log'})")

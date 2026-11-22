@@ -12,6 +12,7 @@ Rows labelled failed or partial are kept for the record and never analysed.
 from dataclasses import dataclass
 from pathlib import Path
 
+from outcome_bias.models import ORDER
 from outcome_bias.paths import ROOT, RUN_INDEX
 
 
@@ -45,6 +46,12 @@ def find(label=None, exp=None, arm="main", model=None) -> list[Run]:
             if r.log and r.label not in ("failed", "partial")
             and (label is None or r.label == label) and (exp is None or r.exp == exp)
             and (arm is None or r.arm == arm) and (model is None or r.model == model)]
+
+
+def judged(label="run1", exp=None, arm="main", among=ORDER) -> tuple[str, ...]:
+    """The models (of `among`) with a finished run matching the given fields, in reporting order."""
+    have = {r.model for r in find(label, exp, arm)}
+    return tuple(m for m in among if m in have)
 
 
 def logs(label=None, exp=None, arm="main", model=None) -> list[Path]:
