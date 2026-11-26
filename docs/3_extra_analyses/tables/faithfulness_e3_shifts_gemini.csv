@@ -1,0 +1,78 @@
+question,model,cond,reasons,scenarios,answers,shift,lo,hi
+violation,gemini-4-hydrogen,harm,not mentioned,21,226,12.83,6.96,20.12
+violation,gemini-4-hydrogen,harm,not mentioned (strict),20,171,12.03,5.81,19.64
+violation,gemini-4-hydrogen,harm,mentioned,9,26,18.35,8.10,30.30
+violation,gemini-4-hydrogen,harm,used as grounds,4,7,11.25,3.75,18.75
+violation,gemini-4-hydrogen,harm,all,21,252,13.21,7.17,20.51
+violation,gemini-4-argon,harm,not mentioned,21,240,8.67,4.95,12.97
+violation,gemini-4-argon,harm,not mentioned (strict),20,200,6.87,3.82,10.19
+violation,gemini-4-argon,harm,mentioned,5,10,9.83,-3.17,30.00
+violation,gemini-4-argon,harm,all,21,250,9.46,5.19,14.23
+violation,gemini-4-carbon,harm,not mentioned,21,235,4.08,1.91,6.41
+violation,gemini-4-carbon,harm,not mentioned (strict),21,194,4.22,2.21,6.51
+violation,gemini-4-carbon,harm,mentioned,6,17,6.92,-2.92,15.64
+violation,gemini-4-carbon,harm,all,21,252,4.52,2.14,6.94
+blame,gemini-4-hydrogen,harm,not mentioned,21,204,22.10,15.31,29.75
+blame,gemini-4-hydrogen,harm,not mentioned (strict),20,139,20.51,14.39,27.06
+blame,gemini-4-hydrogen,harm,mentioned,17,48,21.67,14.41,29.08
+blame,gemini-4-hydrogen,harm,used as grounds,8,18,31.96,21.77,40.78
+blame,gemini-4-hydrogen,harm,all,21,252,22.08,15.63,29.17
+blame,gemini-4-argon,harm,not mentioned,21,231,18.05,11.33,26.24
+blame,gemini-4-argon,harm,not mentioned (strict),20,182,14.37,9.73,19.47
+blame,gemini-4-argon,harm,mentioned,9,21,16.41,7.06,27.43
+blame,gemini-4-argon,harm,used as grounds,4,9,21.50,4.58,41.92
+blame,gemini-4-argon,harm,all,21,252,17.96,11.21,26.13
+blame,gemini-4-carbon,harm,not mentioned,21,208,11.60,6.75,17.20
+blame,gemini-4-carbon,harm,not mentioned (strict),21,161,11.57,6.13,17.99
+blame,gemini-4-carbon,harm,mentioned,12,44,13.58,4.38,24.28
+blame,gemini-4-carbon,harm,used as grounds,7,28,23.82,13.55,37.38
+blame,gemini-4-carbon,harm,all,21,252,11.75,6.77,17.58
+risk,gemini-4-hydrogen,harm,not mentioned,21,216,23.89,14.57,33.83
+risk,gemini-4-hydrogen,harm,not mentioned (strict),19,151,21.93,12.66,31.61
+risk,gemini-4-hydrogen,harm,mentioned,10,36,15.76,3.27,31.42
+risk,gemini-4-hydrogen,harm,all,21,252,23.00,13.73,32.96
+risk,gemini-4-argon,harm,not mentioned,21,231,14.30,6.66,22.64
+risk,gemini-4-argon,harm,not mentioned (strict),21,166,13.62,5.55,22.81
+risk,gemini-4-argon,harm,mentioned,7,18,18.95,1.67,39.05
+risk,gemini-4-argon,harm,all,21,249,13.79,6.33,22.08
+risk,gemini-4-carbon,harm,not mentioned,21,235,11.98,4.72,19.44
+risk,gemini-4-carbon,harm,not mentioned (strict),21,171,10.12,3.39,17.28
+risk,gemini-4-carbon,harm,mentioned,7,17,9.80,0.15,20.33
+risk,gemini-4-carbon,harm,all,21,252,11.65,4.48,19.07
+violation,gemini-4-hydrogen,payoff,not mentioned,21,250,-2.44,-5.00,0.06
+violation,gemini-4-hydrogen,payoff,not mentioned (strict),21,221,-2.37,-5.03,0.47
+violation,gemini-4-hydrogen,payoff,all,21,252,-2.40,-4.98,0.10
+violation,gemini-4-argon,payoff,not mentioned,21,246,2.30,-0.81,6.13
+violation,gemini-4-argon,payoff,not mentioned (strict),21,211,2.19,-0.96,6.09
+violation,gemini-4-argon,payoff,mentioned,3,3,13.33,-5.00,35.00
+violation,gemini-4-argon,payoff,all,21,249,2.31,-0.81,6.18
+violation,gemini-4-carbon,payoff,not mentioned,21,250,-1.02,-2.91,0.76
+violation,gemini-4-carbon,payoff,not mentioned (strict),21,215,-0.86,-2.80,0.97
+violation,gemini-4-carbon,payoff,all,21,252,-1.01,-2.89,0.76
+blame,gemini-4-hydrogen,payoff,not mentioned,21,227,-11.26,-16.25,-6.68
+blame,gemini-4-hydrogen,payoff,not mentioned (strict),21,194,-11.30,-16.34,-6.69
+blame,gemini-4-hydrogen,payoff,mentioned,9,25,-18.92,-26.42,-11.02
+blame,gemini-4-hydrogen,payoff,all,21,252,-11.17,-16.01,-6.63
+blame,gemini-4-argon,payoff,not mentioned,21,222,-10.05,-15.81,-4.55
+blame,gemini-4-argon,payoff,not mentioned (strict),21,165,-9.96,-15.54,-4.55
+blame,gemini-4-argon,payoff,mentioned,13,29,-12.55,-20.42,-4.62
+blame,gemini-4-argon,payoff,dismissed,5,6,-17.33,-23.83,-12.50
+blame,gemini-4-argon,payoff,used as grounds,3,6,-16.67,-33.33,0.00
+blame,gemini-4-argon,payoff,all,21,251,-10.18,-15.89,-4.62
+blame,gemini-4-carbon,payoff,not mentioned,21,222,-7.58,-11.51,-3.85
+blame,gemini-4-carbon,payoff,not mentioned (strict),21,170,-7.55,-11.37,-3.93
+blame,gemini-4-carbon,payoff,mentioned,12,30,-11.60,-15.77,-7.15
+blame,gemini-4-carbon,payoff,dismissed,6,9,-9.72,-16.39,-3.06
+blame,gemini-4-carbon,payoff,all,21,252,-7.24,-10.69,-3.85
+risk,gemini-4-hydrogen,payoff,not mentioned,21,242,-15.94,-22.89,-9.40
+risk,gemini-4-hydrogen,payoff,not mentioned (strict),20,199,-14.96,-21.93,-8.80
+risk,gemini-4-hydrogen,payoff,mentioned,4,10,-19.29,-38.17,-0.42
+risk,gemini-4-hydrogen,payoff,all,21,252,-15.91,-22.92,-9.37
+risk,gemini-4-argon,payoff,not mentioned,21,239,-11.42,-19.02,-4.86
+risk,gemini-4-argon,payoff,not mentioned (strict),19,186,-12.27,-20.42,-5.39
+risk,gemini-4-argon,payoff,mentioned,5,12,-0.20,-4.20,5.00
+risk,gemini-4-argon,payoff,all,21,251,-11.30,-18.99,-4.71
+risk,gemini-4-carbon,payoff,not mentioned,21,237,-10.10,-15.38,-5.80
+risk,gemini-4-carbon,payoff,not mentioned (strict),19,193,-10.24,-15.68,-5.45
+risk,gemini-4-carbon,payoff,mentioned,5,15,-5.50,-9.00,-2.00
+risk,gemini-4-carbon,payoff,all,21,252,-10.04,-15.30,-5.76

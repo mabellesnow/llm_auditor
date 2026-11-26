@@ -16,10 +16,9 @@ from collections import defaultdict
 
 from outcome_bias import runlog
 from outcome_bias.analysis.load import load
-from outcome_bias.stats import boot, contrast, digits_for, fmt, unit_means
+from outcome_bias.models import rank
+from outcome_bias.stats import boot, cond_mean, contrast, digits_for, fmt, unit_means
 from outcome_bias.verify import check_freeze
-
-MODEL_ORDER = ("haiku", "sonnet", "opus")
 
 # Primary contrast first in each list (worse ending minus better ending).
 CONTRASTS = {
@@ -35,10 +34,6 @@ COND_ORDER = {
 }
 
 
-def _model_rank(model):
-    return next((i for i, k in enumerate(MODEL_ORDER) if k in model), 9)
-
-
 def performance_did(R):
     """E2: the cost of the shortcut on the performance score (compliant minus borderline), after success
     minus after failure. The predicted bias makes it negative."""
@@ -51,13 +46,13 @@ def performance_did(R):
                                      for c in ("success", "failure", "omitted"))]  # a cell can be empty if unparsed
     cost = {c: [st.mean(cells[(u, "compliant", c)]) - st.mean(cells[(u, "borderline", c)]) for u in units]
             for c in ("success", "failure", "omitted")}
-    did = boot([s - f for s, f in zip(cost["success"], cost["failure"])])
+    did = boot([s - f for s, f in zip(cost["success"], cost["failure"], strict=True)])
     return cost, did
 
 
 def report(rows):
     exp = rows[0]["exp"]
-    groups = sorted({(r["model"], r["reasoning"]) for r in rows}, key=lambda g: (_model_rank(g[0]), g[1]))
+    groups = sorted({(r["model"], r["reasoning"]) for r in rows}, key=lambda g: (rank(g[0]), g[1]))
     for model, reasoning in groups:
         R = [r for r in rows if r["model"] == model and r["reasoning"] == reasoning]
         thought = st.mean(r["thought"] for r in R)
@@ -72,8 +67,7 @@ def report(rows):
             for q in questions:
                 um = unit_means([r for r in V if r["question"] == q], value)
                 d = 2 if exp == "e4" else digits_for(q)
-                means = "  ".join(f"{c} {st.mean(v for (u, cc), v in um.items() if cc == c):.{d}f}"
-                                  for c in COND_ORDER[exp] if any(cc == c for _, cc in um))
+                means = "  ".join(f"{c} {cond_mean(um, c):.{d}f}" for c in COND_ORDER[exp] if any(cc == c for _, cc in um))
                 print(f"  {'listed target' if exp == 'e4' else q:<13} {means}")
                 for a, b in CONTRASTS[exp]:
                     c = contrast(um, a, b)
@@ -82,7 +76,7 @@ def report(rows):
             if exp == "e4":
                 um = unit_means(V, "others")
                 print("  other tickets listed per session: " + "  ".join(
-                    f"{c} {st.mean(v for (u, cc), v in um.items() if cc == c):.2f}" for c in COND_ORDER[exp]))
+                    f"{c} {cond_mean(um, c):.2f}" for c in COND_ORDER[exp]))
         if exp == "e2":
             cost, did = performance_did(R)
             print("\n  -- performance score: cost of the shortcut (compliant minus borderline), by ending")

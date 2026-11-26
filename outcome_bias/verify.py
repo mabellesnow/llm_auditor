@@ -98,7 +98,7 @@ def check_prompts():
             seen += 1
             bad += expected.get(s.id) != (system, user)
         total_bad += bad
-        print(f"  {'ok ' if not bad else 'BAD'} {run.label:<20} {run.model:<7} {run.arm:<9} {study:<20} "
+        print(f"  {'ok ' if not bad else 'BAD'} {run.label:<20} {run.model:<17} {run.arm:<9} {study:<23} "
               f"{seen:4d} prompts, {bad} differ")
     return total_bad
 

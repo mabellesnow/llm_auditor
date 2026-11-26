@@ -12,6 +12,7 @@ Rows labelled failed or partial are kept for the record and never analysed.
 from dataclasses import dataclass
 from pathlib import Path
 
+from outcome_bias.models import ORDER
 from outcome_bias.paths import ROOT, RUN_INDEX
 
 
@@ -29,13 +30,18 @@ class Run:
 
 
 def runs() -> list[Run]:
+    """Every row of the run index. A row without five tab-separated fields is an error: skipping it would
+    silently drop a run from every analysis."""
     if not RUN_INDEX.exists():
         return []
     out = []
-    for line in RUN_INDEX.read_text().splitlines():
+    for n, line in enumerate(RUN_INDEX.read_text().splitlines(), 1):
+        if not line.strip():
+            continue
         f = line.split("\t")
-        if len(f) == 5:
-            out.append(Run(*f))
+        if len(f) != 5:
+            raise ValueError(f"{RUN_INDEX}, line {n}: expected 5 tab-separated fields, got {len(f)}: {line!r}")
+        out.append(Run(*f))
     return out
 
 
@@ -45,6 +51,12 @@ def find(label=None, exp=None, arm="main", model=None) -> list[Run]:
             if r.log and r.label not in ("failed", "partial")
             and (label is None or r.label == label) and (exp is None or r.exp == exp)
             and (arm is None or r.arm == arm) and (model is None or r.model == model)]
+
+
+def judged(label="run1", exp=None, arm="main", among=ORDER) -> tuple[str, ...]:
+    """The models (of `among`) with a finished run matching the given fields, in reporting order."""
+    have = {r.model for r in find(label, exp, arm)}
+    return tuple(m for m in among if m in have)
 
 
 def logs(label=None, exp=None, arm="main", model=None) -> list[Path]:

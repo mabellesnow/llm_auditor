@@ -10,8 +10,6 @@ no titles inside the figures (the captions carry the message), and dots with 95%
 Figures are no wider than the text column, and no text in them is larger than the body text.
 """
 
-import statistics as st
-
 import matplotlib
 
 matplotlib.use("Agg")
@@ -24,7 +22,7 @@ from matplotlib.transforms import blended_transform_factory  # noqa: E402
 from outcome_bias.analysis import faithfulness  # noqa: E402
 from outcome_bias.analysis.load import answers, select  # noqa: E402
 from outcome_bias.paths import POST_FIGURES  # noqa: E402
-from outcome_bias.stats import contrast, unit_means  # noqa: E402
+from outcome_bias.stats import cond_mean, contrast, unit_means  # noqa: E402
 
 MODELS = ("Haiku", "Sonnet", "Opus")
 
@@ -65,8 +63,7 @@ def effect(label, exp, model, q, a, b, version=None):
 
 
 def level(label, exp, model, q, cond, version=None):
-    um = unit_means(select(rows(label, exp, model), q, version))
-    return st.mean(v for (u, c), v in um.items() if c == cond)
+    return cond_mean(unit_means(select(rows(label, exp, model), q, version)), cond)
 
 
 def signed(x):
@@ -190,7 +187,7 @@ def fork():
 # ---------------------------------------------------------------- Figure 2: harm against payoff
 def asymmetry():
     fig, axes = plt.subplots(1, 2, figsize=(W, 2.9), sharey=True)
-    for ax, (q, name) in zip(axes, (("violation", "Was the rule broken?"), ("blame", "How much blame?"))):
+    for ax, (q, name) in zip(axes, (("violation", "Was the rule broken?"), ("blame", "How much blame?")), strict=True):
         for i, m in enumerate(MODELS):
             for dy, cond in ((0.17, "payoff"), (-0.17, "harm")):
                 est, lo, hi = effect("run1", "e3", m, q, cond, "omitted", "borderline")
@@ -264,10 +261,10 @@ def fixes():
     arms = [("As asked", "run1", "main"), ("Think first", "run1", "reasoning"),
             ("Labelled scale", "x1-labelled", "main"), ("Labels + sentence", "x1-ignore", "main")]
     fig, axes = plt.subplots(1, 3, figsize=(W, 2.8), sharey=True)
-    for ax, m in zip(axes, MODELS):
+    for ax, m in zip(axes, MODELS, strict=True):
         c = COLOR[m]
         base = None
-        for i, (name, label, arm) in enumerate(arms):
+        for i, (_, label, arm) in enumerate(arms):
             y = len(arms) - 1 - i
             r = answers(label, "e3", m.lower(), arm=arm)[0]
             if not r:
@@ -315,7 +312,50 @@ def unspoken():
     return save(fig, "unspoken.png")
 
 
-ALL = (fork, asymmetry, hindsight, monitor, unspoken, fixes)  # post order
+# ---------------------------------------------------------------- Figure 7: Claude, Gemini and Inkling
+FAMILY_ROWS = (("Claude", (("Haiku", "haiku"), ("Sonnet", "sonnet"), ("Opus", "opus"))),
+               ("Gemini", (("Hydrogen", "gemini-4-hydrogen"), ("Argon", "gemini-4-argon"),
+                           ("Carbon", "gemini-4-carbon"))),
+               ("Open weights", (("Inkling 2 Mini", "inkling-2-mini"),)))
+
+
+def families():
+    """Figure 2's test on Claude, Gemini and Inkling 2 Mini. Rows are labelled and grouped, so ink, not a colour per
+    model: seven model hues cannot all be told apart under colour-blindness, and new ones would clash with the post's
+    model colours."""
+    fig, axes = plt.subplots(1, 2, figsize=(W, 4.9), sharey=True)
+    ticks, labels, heads = [], [], []
+    y = 7.0
+    for family, models in FAMILY_ROWS:
+        heads.append((family, y))
+        for name, key in models:
+            y -= 0.72
+            ticks.append(y)
+            labels.append((name, key))
+        y -= 0.62
+    for ax, (q, title) in zip(axes, (("violation", "Was the rule broken?"), ("blame", "How much blame?")), strict=True):
+        for yy, (_, key) in zip(ticks, labels, strict=True):
+            for dy, cond in ((0.15, "payoff"), (-0.15, "harm")):
+                est, lo, hi = effect("run1", "e3", key, q, cond, "omitted", "borderline")
+                whisker(ax, yy + dy, est, lo, hi, INK_2, hollow=cond == "payoff")
+        zero(ax)
+        ax.set_xlim(-20, 37)
+        ax.set_xticks([-20, -10, 0, 10, 20, 30])
+        ax.set_ylim(ticks[-1] - 0.5, heads[0][1] + 0.2)
+        ax.set_title(title)
+        ax.set_xlabel("Change from no ending (points)")
+        frame(ax)
+    trans = blended_transform_factory(axes[0].transAxes, axes[0].transData)
+    for family, hy in heads:
+        axes[0].text(-0.02, hy - 0.12, family, transform=trans, ha="right", va="center", fontsize=9.5,
+                     weight="medium", color=MUTED)
+    axes[0].set_yticks(ticks, [n for n, _ in labels])
+    fig.subplots_adjust(wspace=0.08)
+    legend_above(axes[0], [(*HOLLOW, "The shortcut paid off"), (*FILLED, "The harm the rule guards against")], y=1.1)
+    return save(fig, "families.png")
+
+
+ALL = (fork, asymmetry, hindsight, monitor, unspoken, fixes, families)  # post order
 
 
 def main():

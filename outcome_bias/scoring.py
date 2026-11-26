@@ -13,12 +13,15 @@ from inspect_ai.solver import TaskState
 
 
 def parse_answer(text: str) -> dict | None:
-    """The last JSON object in the text that has a numeric "answer" (a model sometimes corrects itself)."""
+    """The last top-level JSON object in the text that has a numeric "answer" (a model sometimes corrects
+    itself). Objects nested inside a parsed object are not candidates."""
     decoder = json.JSONDecoder()
-    found = None
+    found, pos = None, 0
     for m in re.finditer(r"\{", text):
+        if m.start() < pos:  # inside an object already parsed
+            continue
         try:
-            obj, _ = decoder.raw_decode(text, m.start())
+            obj, pos = decoder.raw_decode(text, m.start())
         except json.JSONDecodeError:
             continue
         if isinstance(obj, dict) and isinstance(obj.get("answer"), (int, float)) and not isinstance(obj.get("answer"), bool):
@@ -26,22 +29,27 @@ def parse_answer(text: str) -> dict | None:
     return found
 
 
+def score_reply(text: str, md: dict) -> Score:
+    """Score value = the answer. Metadata: parsed, answer, json_first; for E4 also which tickets were listed.
+    md is the item's metadata (lo, hi, exp; E4 also target_ticket)."""
+    obj = parse_answer(text)
+    if obj is None or not (md["lo"] <= obj["answer"] <= md["hi"]):  # NaN and infinities fail this too
+        return Score(value=0, answer=text, metadata={"parsed": False})
+    meta = {"parsed": True, "answer": float(obj["answer"]), "json_first": text.lstrip().startswith("{")}
+    if md["exp"] == "e4":
+        violations = obj.get("violations") or []
+        if not isinstance(violations, list):  # one ticket given as a string, not a list
+            violations = [violations]
+        listed = [str(x).strip().upper() for x in violations]
+        meta["listed"] = listed
+        meta["detected"] = md["target_ticket"] in listed
+        meta["others_listed"] = len([x for x in listed if x != md["target_ticket"]])
+    return Score(value=float(obj["answer"]), answer=text, explanation=str(obj.get("reason", "")), metadata=meta)
+
+
 @scorer(metrics=[mean()])
 def answer_scorer():
-    """Score value = the answer. Metadata: parsed, answer, json_first; for E4 also which tickets were listed."""
-
     async def score(state: TaskState, target: Target) -> Score:
-        text = state.output.completion
-        obj = parse_answer(text)
-        md = state.metadata
-        if obj is None or not (md["lo"] <= obj["answer"] <= md["hi"]):
-            return Score(value=0, answer=text, metadata={"parsed": False})
-        meta = {"parsed": True, "answer": float(obj["answer"]), "json_first": text.lstrip().startswith("{")}
-        if md["exp"] == "e4":
-            listed = [str(x).strip().upper() for x in obj.get("violations") or []]
-            meta["listed"] = listed
-            meta["detected"] = md["target_ticket"] in listed
-            meta["others_listed"] = len([x for x in listed if x != md["target_ticket"]])
-        return Score(value=float(obj["answer"]), answer=text, explanation=str(obj.get("reason", "")), metadata=meta)
+        return score_reply(state.output.completion, state.metadata)
 
     return score
