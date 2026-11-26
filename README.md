@@ -4,7 +4,11 @@ Does an LLM that reviews an AI agent's work judge the same behaviour differently
 
 Every experiment uses the same move: show the model a transcript that is word-for-word identical except for its last line (how things turned out), ask one question per call, and compare the answers across endings, scenario by scenario.
 
-**Start with the write-up:** [docs/posts/the_judge_who_read_the_ending.md](docs/posts/the_judge_who_read_the_ending.md).
+**Start with the write-up:** 
+
+![The Judge Who Read the Ending: one-page summary](docs/posts/figures/judge_paper.gif)
+
+[docs/posts/the_judge_who_read_the_ending.md](docs/posts/the_judge_who_read_the_ending.md).
 
 Code and writeup assisted by Claude; research questions, experiment design and interpretation of results are my own.
 
