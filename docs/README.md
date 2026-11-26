@@ -1,12 +1,14 @@
 # Docs
 
-Folders are numbered in the order the work happened. Plans were written and frozen before their runs; results were written after.
+Folders are numbered in the order the work happened. Plans were written and frozen before their runs, except the Gemini plan, written after its first E3 run (it says what had been seen), and the open-weight check, which had none. Results were written after.
 
 | Folder | What it covers | Plan | Results |
 |---|---|---|---|
 | **1_main_experiments** | E1 to E5, five pre-registered experiments, plus the labelled-scale follow-up on Haiku (called X1 inside the documents) | [plan.md](1_main_experiments/plan.md) | [results.md](1_main_experiments/results.md) |
 | **2_follow_ups** | Four runs that closed the gaps E1 to E5 left, called parts A to D (and "stage 2") inside the documents: A, Opus re-runs; B, the labelled scale on all models; C, a neutral-note control for E5; D, stating each rule's purpose | [plan.md](2_follow_ups/plan.md) | [results.md](2_follow_ups/results.md) |
 | **3_extra_analyses** | Effect sizes and mixed models, which scenarios tip, whether explanations admit the swing. On the existing logs; exploratory | | [results.md](3_extra_analyses/results.md), `tables/` |
+| **4_gemini** | The studies the post relies on (E1, E2, E3, the three follow-ups), re-run on a second model family: Gemini 4 Hydrogen, Argon and Carbon. The plan was written after E3's first Gemini run, and says so | [plan.md](4_gemini/plan.md) | [results.md](4_gemini/results.md); explanation tables in `3_extra_analyses/tables/*_gemini.csv` |
+| **5_open_models** | E3's violation, blame and risk questions on an open-weight model, Inkling 2 Mini, served locally with Ollama: does it side with Claude or Gemini on whether good luck excuses? One run, chosen after the Gemini results, no plan | | [results.md](5_open_models/results.md) |
 | **posts** | The write-up for general readers, and its figures | | [the_judge_who_read_the_ending.md](posts/the_judge_who_read_the_ending.md) |
 | **background** | Prior work; ideas for turning this into a paper | | [prior_work.md](background/prior_work.md), [roadmap.md](background/roadmap.md) |
 
@@ -25,11 +27,13 @@ The study id is used everywhere: the stimulus folder, the code module, and the I
 | `followup_neutral_note` | Is E5's "no harm" relief the outcome, or any note? | `followup_neutral_note/` | 2 (part C) | e5: `s2-e5_neutral`, `s2-e5_neutral-run2` |
 | `followup_rule_purpose` | Does harm still move the verdict when the rule's purpose is stated? | `followup_rule_purpose/` | 2 (part D) | e3: `s2-purpose`, `s2-purpose-run2` |
 
-Run labels are the names recorded in the logs when each run happened, so they keep their original prefixes (`x1-`, `s2-`).
+Run labels are the names recorded in the logs when each run happened, so they keep their original prefixes (`x1-`, `s2-`). The Gemini and Inkling runs reuse the same labels; the run index's model column (`gemini-4-…`, `inkling-2-mini`) tells them apart.
 
 ## Checking the stimuli
 
 `outcome_bias/stimuli/hashes.json` holds the SHA-256 of every stimulus file. `python -m outcome_bias.verify` checks those hashes, then rebuilds every prompt in every logged run from the current code and compares it with what the model saw.
+
+`tests/test_prompts.py` pins every study's prompts by digest as well, so `.venv/bin/pytest` catches a change to what the models see without needing the logs.
 
 The per-plan hash files (`1_main_experiments/plan_hashes.json`, `2_follow_ups/plan_hashes.json`) are kept as written. They hash the Python files the stimuli lived in at the time.
 

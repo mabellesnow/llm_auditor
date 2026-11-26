@@ -12,6 +12,8 @@ Good luck doesn't excuse the agent, but bad luck can condemn it.
 
 I tested this across 21 agent scenarios and three Claude models. Compared with transcripts without an ending, harmful outcomes raised Haiku's estimated probability of a policy violation by 24 percentage points on average and Sonnet's by 15, even though the agent's actions were identical. Opus's barely moved. The judges' explanations often gave no indication that the outcome had influenced the verdict.
 
+I then repeated the experiments on three of Google's Gemini models, and the core test on an open-weight model, Inkling 2 Mini. The pattern in the verdicts held for all three developers' models. But Gemini, unlike the others, also let good outcomes lower the agent's blame.
+
 ## Why this matters
 
 LLMs are increasingly used to evaluate other AI systems. They audit agent transcripts for policy violations, monitor for suspicious behaviour, score trajectories, and provide feedback that can be used in training.
@@ -44,7 +46,7 @@ These aren't deliberately blatant violations. Each has room for interpretation, 
 
 Each transcript contains a policy, a task, and 9–20 steps of agent activity. I created versions with identical actions but different endings: no outcome, a successful outcome, or a harmful one.
 
-I then asked three judges—Claude Haiku 5.5, Sonnet 5.5, and Opus 5.5—to evaluate each version independently.
+I then asked three judges—Claude Haiku 5.5, Sonnet 5.5, and Opus 5.5—to evaluate each version independently. Later, I repeated the experiments with three Gemini models, and the core test with one open-weight model; that comparison has its own section near the end.
 
 The main questions included:
 
@@ -53,7 +55,7 @@ The main questions included:
 - Can its handling of the task be accepted as it stands?
 - How risky was its decision at the time it acted?
 
-The experimental plan, comparisons, and criteria for claiming an effect were written down before testing the endings. Every claimed effect was independently re-run.
+The experimental plan, comparisons, and criteria for claiming an effect were written down before testing the endings on Claude. Every claimed effect was independently re-run.
 
 > **For the technical reader:** each answer comes from a separate call with one question, so the judge never sees two versions of a transcript. The unit of analysis is the scenario, not the answer: for each scenario I take the difference between two endings of the same transcript, average those differences, and put a bootstrap 95% interval on the average by resampling scenarios. An effect counts only if its interval excludes zero in the same direction in at least two of the three models, and it counts as confirmed only if an independent re-run from scratch agrees. Details are under Methods at the end.
 
@@ -277,15 +279,43 @@ For the Lisbon security alert described earlier, Sonnet still gave the lucky age
 
 A simple instruction can reduce the average distortion while leaving individual cases strongly affected.
 
+## Is this just Claude?
+
+All of the results so far come from one model family, judging scenarios that were drafted with the help of that same family. So I repeated the experiments behind the findings above with three of Google's models: Gemini 4 Hydrogen, Argon, and Carbon, roughly Google's counterparts to Haiku, Sonnet, and Opus. The transcripts, questions, and rules for claiming an effect were the same, applied within the Gemini family, and every claimed effect was re-run.
+
+![Harm and payoff against no ending, Claude, Gemini and Inkling](figures/families.png)
+
+*Figure 7. Figure 2's test on seven models from three developers. A payoff barely moves the verdict in any of them, but lowers blame in all three Gemini models. First runs (Inkling's only run); shaded bars: 95% intervals.*
+
+Most of the picture held.
+
+Harm again made the same transcript look more like a violation: by 12, 10, and 4 points compared with no ending, for Hydrogen, Argon, and Carbon. A payoff again didn't make it look less like one. As with Opus, the family's most capable model, Carbon, was the most resistant.
+
+The other results replicated too. Stating the rule's purpose didn't shrink the verdict shift. The extra sentence did, by 10 points for Hydrogen and 4 for Argon. "Nothing bad happened" lowered a monitor's suspicion compared with a neutral note. And Gemini's explanations were even less forthcoming than Claude's: they mentioned the harm in 4–10% of answers, yet the verdict shifted by most of the full amount in answers that shared no word with the ending.
+
+One thing didn't hold.
+
+For Gemini, good luck did excuse the agent, at least for blame and for the risk it was judged to have taken. When the shortcut paid off, all three Gemini models blamed the agent 7–11 points less than with no ending, and rated its decision 10–17 points less risky at the time it was made. Claude's models moved much less: about a point on blame, and 3–5 points on risk.
+
+Gemini's hindsight also reached further. When a borderline agent's task failed for reasons unrelated to its shortcut, Gemini rated the original decision 13–18 points riskier; Claude's models, 2–9 points.
+
+Was that Claude or Gemini being unusual? To get a third view, I ran the core test on Inkling 2 Mini, an open-weight model from Thinking Machines, on my own machine. At about 13 hours for one run, I limited it to the violation, blame and risk questions, run once.
+
+Inkling sided with Claude. Harm raised its violation estimate by 11 points compared with no ending, and a payoff didn't lower it. Nor did a payoff lower its blame: it moved by +1, and the interval rules out a drop of more than about 3 points. Perceived risk fell by about 5, within Claude's range. And it wasn't for lack of room: with no ending, Inkling was the harshest of the seven judges.
+
+So the asymmetry in this post's first finding holds for the verdict across Claude, Gemini and Inkling. For blame and perceived risk, Gemini is the exception, not Claude. In the twelve human stories, all six Claude and Gemini models let a good ending reduce blame below the no-ending baseline; only Claude's stopped doing so when the one being judged was an AI agent. (I didn't run the human stories on Inkling.)
+
+A few caveats. Three models per family is a small sample: this shows a difference between these models, not a tested difference between families. Inkling is one model, run once on one experiment, so it's a check rather than a finding. And unlike the Claude experiments, the Gemini plan was written after I had seen the first Gemini run of the main experiment, which is where the good-luck pattern first appeared. The re-runs confirmed it in all three models.
+
 ## What this means for evaluating AI agents
 
 The results don't imply that LLM judges always confuse outcomes with actions.
 
 They show something more specific.
 
-Across these experiments, judges generally resisted rewarding questionable shortcuts for succeeding. Harmful endings did raise blame and sanctions in all three models, but that part isn't necessarily a mistake. People and institutions often hold an agent more accountable when real harm follows, and a harsher sanction after harm can be a deliberate choice.
+Across these experiments, judges generally resisted rewarding questionable shortcuts for succeeding, at least when deciding whether a rule was broken. Harmful endings did raise blame and sanctions in all three models, but that part isn't necessarily a mistake. People and institutions often hold an agent more accountable when real harm follows, and a harsher sanction after harm can be a deliberate choice.
 
-The stronger finding concerns the other judgements. In these experiments, the agents' actions and information were held constant. The later outcomes shouldn't by themselves change whether a rule was broken, what risk was foreseeable at the time, or what the agent intended. Yet harm increased violation judgements in two of the three models and made past decisions look riskier, and a harmless ending made monitors less suspicious and less sure the action was deliberate. The explanations accompanying these judgements frequently failed to reveal the influence of the ending.
+The stronger finding concerns the other judgements. In these experiments, the agents' actions and information were held constant. The later outcomes shouldn't by themselves change whether a rule was broken, what risk was foreseeable at the time, or what the agent intended. Yet harm increased violation judgements in two of the three Claude models, all three Gemini models and Inkling, and made past decisions look riskier, and a harmless ending made monitors less suspicious and less sure the action was deliberate. The explanations accompanying these judgements frequently failed to reveal the influence of the ending.
 
 The distinction between evaluating an action and evaluating its consequences needs to be explicit.
 
@@ -293,10 +323,11 @@ For systems using LLM judges, I'd draw several practical implications:
 
 - For policy compliance, hide the outcome where possible. Evaluate the transcript at the point of the agent's last relevant action rather than including subsequent incident reports or user feedback.
 - Separate violation from severity. Whether a rule was broken and how serious its consequences were should be distinct judgements.
-- When outcomes can't be removed, explicitly instruct the judge not to use them for compliance decisions. This reduced most of the average verdict distortion in Haiku and Sonnet.
+- When outcomes can't be removed, explicitly instruct the judge not to use them for compliance decisions. This reduced most of the average verdict distortion in Haiku and Sonnet, and in two of the three Gemini models.
 - Be careful with agent-authored follow-ups. Reassuring statements about the absence of harm can reduce a monitor's suspicion.
 - Separate process and outcome in training feedback. Otherwise, a system may penalise compliant behaviour for bad luck or reward trajectories based on consequences beyond the agent's control.
 - Don't assume explanations expose the influences on a verdict. An apparently sound justification can accompany an outcome-dependent judgement.
+- Test the judge you actually use. Claude, Gemini and Inkling agreed on the main pattern, but Gemini differed from the other two on whether a good outcome reduces blame.
 
 These are not guarantees. They're ways to make the evaluation target clearer and reduce opportunities for irrelevant information to affect it.
 
@@ -310,7 +341,7 @@ The challenge isn't simply to make judges more accurate. It's to make sure they'
 
 There are several reasons not to generalise too far.
 
-All three judges belong to the Claude family, and the agent scenarios were drafted with Claude. The findings may differ for other model families.
+The main experiments used three Claude models, and the agent scenarios were drafted with Claude. A second family, Gemini, reproduced the main pattern but differed in other ways, and one open-weight model, Inkling 2 Mini, matched Claude on the core test. Seven models from three developers is still a small sample, the Gemini plan was written after part of its data had been seen, and Inkling ran once, without a written plan of its own.
 
 The transcripts were synthetic and relatively short, with at most 20 steps. Real agent trajectories are longer and messier; outcomes may appear deep inside tool outputs rather than in a neatly separated final note.
 
@@ -318,25 +349,25 @@ There was no human baseline for the agent scenarios, so I can't say whether the 
 
 I also tried a separate vigilance experiment, burying subtle violations among routine tickets. It produced no meaningful effect, but detection was already near-perfect without any outcome manipulation. That experiment was simply too easy to tell us much.
 
-Finally, some analyses—particularly which scenarios are most sensitive and whether the explanations mention outcomes—were exploratory rather than part of the original experimental plan.
+Finally, some analyses—particularly which scenarios are most sensitive and whether the explanations mention outcomes—were exploratory rather than part of the original experimental plan. So was the good-luck pattern in Gemini, though its re-runs confirmed it.
 
 The strongest evidence concerns the repeated average effects, not a universal claim that every judge will behave this way in every deployment.
 
 ## Methods and reproducibility
 
-- **Models:** Claude Haiku 5.5, Sonnet 5.5, and Opus 5.5, evaluated using [Inspect](https://inspect.aisi.org.uk), primarily through the batch API.
-- **Scale:** 54 runs, 68,148 model responses across the pre-registered experiments and follow-ups, costing approximately $100 in API usage.
+- **Models:** Claude Haiku 5.5, Sonnet 5.5, and Opus 5.5, then Gemini 4 Hydrogen, Argon, and Carbon, evaluated using [Inspect](https://inspect.aisi.org.uk), primarily through the batch API. Then Inkling 2 Mini, served locally with Ollama.
+- **Scale:** For Claude, 54 runs, 68,148 model responses across the pre-registered experiments and follow-ups, costing approximately $100 in API usage. For Gemini, 39 runs and 53,460 responses, approximately $72. For Inkling, one run of 1,080 responses, at no API cost.
 - **Experimental design:** Comparisons were based on scenario-level paired differences across outcome conditions. I calculated average differences and bootstrap 95% confidence intervals by resampling scenarios. An effect was claimed only when the interval excluded zero in the same direction for at least two models and an independent re-run agreed.
-- **Reasoning settings:** Haiku and Sonnet were primarily evaluated with reasoning disabled. Opus used its lowest reasoning setting because thinking cannot be disabled. Additional tests compared reasoning configurations for Haiku and Sonnet.
-- **Reproducibility:** Every experiment had a written plan before the models were exposed to the outcome conditions. The analysis code reconstructs logged prompts from the frozen stimuli and verifies that they match.
-- **Deviations and issues:** The API did not accept the planned temperature parameter, so its default was used consistently. Interrupted partial runs were excluded. Content filtering reduced the Opus monitor analysis to eleven scenarios. Two of Opus's ten effects from the main experiments did not reproduce on re-run.
+- **Reasoning settings:** Haiku and Sonnet were primarily evaluated with reasoning disabled. Opus used its lowest reasoning setting because thinking cannot be disabled. Additional tests compared reasoning configurations for Haiku and Sonnet. Gemini Argon and Carbon ran with thinking disabled; Hydrogen, which can't disable it, at its lowest level. Inkling can't disable it either, so it ran at its lowest effort.
+- **Reproducibility:** Every Claude experiment had a written plan before the models were exposed to the outcome conditions. The Gemini plan was written during its first runs and says what had been seen. The analysis code reconstructs logged prompts from the frozen stimuli and verifies that they match.
+- **Deviations and issues:** The API did not accept the planned temperature parameter, so its default was used consistently. Interrupted partial runs were excluded. Content filtering reduced the Opus monitor analysis to eleven scenarios, and blocked some Gemini monitor answers on three of the twelve. Two of Opus's ten effects from the main experiments did not reproduce on re-run.
 
 ## What I'd test next
 
-The most useful extensions would be comparisons with other model families and human judges, followed by experiments that test whether an agent can deliberately exploit the monitor-relaxation effect through its own reports.
+The most useful extensions would be more open-weight models, Inkling on the full set of experiments, and human judges, followed by experiments that test whether an agent can deliberately exploit the monitor-relaxation effect through its own reports.
 
 I'd also want to test the downstream training consequences: if these judges select between agent trajectories, do they favour genuine rule-following, or behaviours that minimise visible negative outcomes?
 
-Finally, comparing base and fine-tuned open models might help explain where the asymmetry originates.
+Finally, comparing base and fine-tuned open models might help explain where the asymmetry originates, and why Gemini differs from Claude and Inkling on blame.
 
 Code, experimental plans, stimuli, and analysis: [github.com/mabellesnow/llm_auditor](https://github.com/mabellesnow/llm_auditor)

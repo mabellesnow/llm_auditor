@@ -1,0 +1,19 @@
+question,model,cond,dismisses,grounds,mentions only,no mention,mention rate
+blame,gemini-4-argon,harm,0.000,0.036,0.048,0.917,0.083
+blame,gemini-4-argon,payoff,0.024,0.024,0.068,0.884,0.116
+blame,gemini-4-carbon,harm,0.004,0.111,0.060,0.825,0.175
+blame,gemini-4-carbon,payoff,0.036,0.036,0.048,0.881,0.119
+blame,gemini-4-hydrogen,harm,0.004,0.071,0.115,0.810,0.190
+blame,gemini-4-hydrogen,payoff,0.004,0.004,0.091,0.901,0.099
+risk,gemini-4-argon,harm,0.000,0.004,0.068,0.928,0.072
+risk,gemini-4-argon,payoff,0.000,0.000,0.048,0.952,0.048
+risk,gemini-4-carbon,harm,0.000,0.004,0.063,0.933,0.067
+risk,gemini-4-carbon,payoff,0.000,0.000,0.060,0.940,0.060
+risk,gemini-4-hydrogen,harm,0.000,0.004,0.139,0.857,0.143
+risk,gemini-4-hydrogen,payoff,0.000,0.000,0.040,0.960,0.040
+violation,gemini-4-argon,harm,0.000,0.020,0.020,0.960,0.040
+violation,gemini-4-argon,payoff,0.000,0.000,0.012,0.988,0.012
+violation,gemini-4-carbon,harm,0.008,0.016,0.044,0.933,0.067
+violation,gemini-4-carbon,payoff,0.000,0.000,0.008,0.992,0.008
+violation,gemini-4-hydrogen,harm,0.000,0.028,0.075,0.897,0.103
+violation,gemini-4-hydrogen,payoff,0.000,0.000,0.008,0.992,0.008

@@ -30,9 +30,7 @@ from statsmodels.regression.mixed_linear_model import MixedLM
 
 from outcome_bias.analysis.load import frame
 from outcome_bias.models import FAMILIES
-from outcome_bias.paths import EXTRA_TABLES
-
-OUT = EXTRA_TABLES
+from outcome_bias.paths import extra_table
 
 # (name, exp, run labels, version, a, b, questions)
 CONTRASTS = [
@@ -79,7 +77,7 @@ def fit_pooled(d, wordings):
     if wordings:
         vc["wording"] = "0 + C(cellw)"
     r, ok = _fit(MixedLM.from_formula("answer ~ x", groups="g", re_formula="0", vc_formula=vc, data=d))
-    comps = dict(zip(r.model.exog_vc.names, r.vcomp))
+    comps = dict(zip(r.model.exog_vc.names, r.vcomp, strict=True))
     total = sum(v * (0.25 if name.endswith("slope") else 1) for name, v in comps.items()) + r.scale
     return r, ok, comps, total
 
@@ -121,15 +119,10 @@ def run(family="claude"):
                 print(f"{name:<14} {q:<11} {who:<7} beta {beta:+7.2f} [{lo:+7.2f}, {hi:+7.2f}]  d_lmm {beta / np.sqrt(total):+.2f}"
                       f"  d_av {d_av:+.2f}  d_z {d_z:+.2f}{'' if ok else '  (not converged)'}", flush=True)
     out = pd.DataFrame(rows)
-    OUT.mkdir(parents=True, exist_ok=True)
-    path = OUT / f"mixed_models{suffix(family)}.csv"
+    path = extra_table("mixed_models", family)
     out.to_csv(path, index=False, float_format="%.4f")
     print(f"\nwrote {path}")
     return out
-
-
-def suffix(family):
-    return "" if family == "claude" else f"_{family}"
 
 
 if __name__ == "__main__":

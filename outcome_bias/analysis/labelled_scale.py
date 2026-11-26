@@ -10,7 +10,7 @@ scenario). E3's own re-run is shown as a yardstick for run-to-run noise.
 
 from outcome_bias import runlog
 from outcome_bias.analysis.load import answers, select
-from outcome_bias.stats import change, contrast, fmt, unit_means
+from outcome_bias.stats import change, cond_mean, contrast, fmt, unit_means
 
 ARMS = [  # (name, run label)
     ("E3, original question, run 1", "run1"),
@@ -36,8 +36,7 @@ def main():
             um, bad = violation_means(label, model)
             if um is None:
                 continue
-            means = "  ".join(f"{c} {sum(v for (u, cc), v in um.items() if cc == c) / sum(1 for _, cc in um if cc == c):5.1f}"
-                              for c in ("payoff", "omitted", "harm"))
+            means = "  ".join(f"{c} {cond_mean(um, c):5.1f}" for c in ("payoff", "omitted", "harm"))
             print(f"\n  {name}  ({bad} unparsed)   {means}")
             for a, b in (("harm", "payoff"), ("harm", "omitted"), ("payoff", "omitted")):
                 print(f"      {a + ' - ' + b:<18} {fmt(contrast(um, a, b))}")

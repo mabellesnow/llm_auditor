@@ -1,7 +1,7 @@
 """Run one study on one or more models, and record each run in the run index.
 
   python -m outcome_bias.run <study> [--models haiku sonnet opus] [--arm main] [--label run1]
-                             [--epochs N] [--batch] [--set key=value ...] [--limit N]
+                             [--epochs N] [--batch] [--set key=value ...] [--limit N] [--questions q1,q2]
 
 Examples
   python -m outcome_bias.run e3_consequences --batch                      # main arm, three Claude models
@@ -28,16 +28,21 @@ from outcome_bias.paths import LOGS, ROOT
 from outcome_bias.studies import STUDIES
 
 
-def run_one(study, model_name, arm, label, epochs, batch, params, limit=None):
+def run_one(study, model_name, arm, label, epochs, batch, params, limit=None, questions=None):
     model = MODELS[model_name]
     if arm not in model.arms:
         raise SystemExit(f"{model_name} has no '{arm}' arm (has: {', '.join(model.arms)})")
     cmd = [str(ROOT / ".venv" / "bin" / "inspect"), "eval", f"outcome_bias/tasks.py@{study.id}",
-           "--model", model.provider_id, "-T", f"reasoning={model.arms[arm]}", "--display", "plain"]
+           "--model", model.provider_id, "-T", f"reasoning={model.arms[arm]}", "--display", "plain",
+           # a request that errors is retried twice; if it still errors it counts as unparsed (excluded, as
+           # pre-registered), and the run fails only when more than 2% of its answers do
+           "--retry-on-error=2", "--fail-on-error=0.02"]
     if epochs:
         cmd += ["-T", f"epochs={epochs}"]
     for key, value in params.items():
         cmd += ["-T", f"{key}={value}"]
+    if questions:
+        cmd += ["-T", f"questions={questions}"]
     if batch:
         cmd += ["--batch=1000"]
     log_dir = LOGS / "smoke" if limit else LOGS
@@ -89,6 +94,7 @@ def main(argv=None):
     p.add_argument("--batch", action="store_true", help="use the batch API (half price, slower)")
     p.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE", help="study parameters, e.g. variant=ignore")
     p.add_argument("--limit", type=int, help="smoke test: only the first N items, not recorded")
+    p.add_argument("--questions", help="only these questions, comma-separated (for slow models), e.g. violation,blame,risk")
     a = p.parse_args(argv)
     study = STUDIES[a.study]
     params = dict(kv.split("=", 1) for kv in a.set)
@@ -97,7 +103,7 @@ def main(argv=None):
         raise SystemExit(f"{study.id} has no parameter {sorted(unknown)} (has: {sorted(study.params) or 'none'})")
     models = [m for name in a.models for m in FAMILIES.get(name, (name,))]
     for m in models:
-        status, log = run_one(study, m, a.arm, a.label, a.epochs, a.batch, params, a.limit)
+        status, log = run_one(study, m, a.arm, a.label, a.epochs, a.batch, params, a.limit, a.questions)
         if status == "failed":
             sys.exit(f"STOPPING: {study.id} on {m} failed ({log or 'no log'})")
 

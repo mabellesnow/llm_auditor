@@ -9,5 +9,9 @@ Extra analyses, exploratory, on the existing logs (docs/3_extra_analyses/results
   moderators     which kinds of rule are most outcome-sensitive (codes: scenario_codes.yaml, in this folder)
   faithfulness   whether the models' reasons acknowledge the ending that moved them
 
+Other models beside Claude:
+  gemini_comparison  the Gemini plan's tests (docs/4_gemini/)    python -m outcome_bias.analysis.gemini_comparison
+  open_comparison    the open-weight check (docs/5_open_models/)  python -m outcome_bias.analysis.open_comparison
+
 Shared pieces: load.py (answers from logs), outcome_bias/stats.py (contrasts and intervals).
 """

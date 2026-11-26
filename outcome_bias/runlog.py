@@ -30,13 +30,18 @@ class Run:
 
 
 def runs() -> list[Run]:
+    """Every row of the run index. A row without five tab-separated fields is an error: skipping it would
+    silently drop a run from every analysis."""
     if not RUN_INDEX.exists():
         return []
     out = []
-    for line in RUN_INDEX.read_text().splitlines():
+    for n, line in enumerate(RUN_INDEX.read_text().splitlines(), 1):
+        if not line.strip():
+            continue
         f = line.split("\t")
-        if len(f) == 5:
-            out.append(Run(*f))
+        if len(f) != 5:
+            raise ValueError(f"{RUN_INDEX}, line {n}: expected 5 tab-separated fields, got {len(f)}: {line!r}")
+        out.append(Run(*f))
     return out
 
 

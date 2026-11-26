@@ -1,4 +1,4 @@
-# Analyst codes for the 21 borderline agent scenarios (stimuli/agent_audit/scenarios_borderline.yaml).
+# Analyst codes for the 21 borderline agent scenarios (outcome_bias/stimuli/agent_transcripts/scenarios_borderline.yaml).
 # Used by the moderator analysis (outcome_bias/analysis/moderators.py). Written after E1 to E5 and stage 2,
 # so this analysis is exploratory.
 #

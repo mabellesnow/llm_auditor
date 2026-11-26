@@ -10,9 +10,8 @@
 
 from outcome_bias import runlog
 from outcome_bias.analysis.load import answers, select
-from outcome_bias.stats import change, contrast, digits_for, excludes_zero, fmt, unit_means
+from outcome_bias.stats import change, contrast, digits_for, direction, fmt, unit_means
 from outcome_bias.verify import check_freeze
-
 
 # Part A: (exp, version, question, a, b, direction claimed in the first run)
 OPUS_CLAIMS = [
@@ -33,17 +32,13 @@ def _contrast(rows, q, version, a, b):
     return contrast(unit_means(select(rows, q, version)), a, b) if rows else None
 
 
-def confirmed(c, sign):
-    return c is not None and (c[1] > 0 if sign > 0 else c[2] < 0)
-
-
 def part_a():
     print("\n=== A. Opus re-runs (rule 2): first run, then re-run")
     runs = {(exp, label): answers(label, exp, "opus")[0] for exp in ("e2", "e3") for label in ("run1", "run2")}
     for exp, version, q, a, b, sign in OPUS_CLAIMS:
         c1 = _contrast(runs[(exp, "run1")], q, version, a, b)
         c2 = _contrast(runs[(exp, "run2")], q, version, a, b)
-        verdict = "not run yet" if not c2 else ("confirmed" if confirmed(c2, sign) else "NOT confirmed")
+        verdict = "not run yet" if not c2 else ("confirmed" if direction(c2) == sign else "NOT confirmed")
         d = digits_for(q)
         print(f"  {exp} {version:<10} {q:<11} {a}-{b:<8} {fmt(c1, d):<26} {fmt(c2, d):<26} {verdict}")
 

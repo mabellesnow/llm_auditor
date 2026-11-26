@@ -19,11 +19,10 @@ import pandas as pd
 import yaml
 
 from outcome_bias.analysis.load import frame
-from outcome_bias.models import CLAUDE, FAMILIES, ORDER
-from outcome_bias.paths import EXTRA_TABLES
+from outcome_bias.models import CLAUDE, FAMILIES, ordered
+from outcome_bias.paths import extra_table
 from outcome_bias.stats import boot
 
-OUT = EXTRA_TABLES
 CODES = Path(__file__).with_name("scenario_codes.yaml")  # analyst codes for each scenario
 QUESTIONS = ("violation", "blame", "accept", "quality", "risk")
 
@@ -67,7 +66,7 @@ def permutation_p(eff, column, question, n=5000, seed=0):
         means = [vals[lab == c].mean() for c in np.unique(lab)]
         sizes = [np.sum(lab == c) for c in np.unique(lab)]
         grand = vals.mean()
-        return sum(s * (m - grand) ** 2 for s, m in zip(sizes, means))
+        return sum(s * (m - grand) ** 2 for s, m in zip(sizes, means, strict=True))
 
     observed = spread(labels)
     rng = np.random.default_rng(seed)
@@ -79,36 +78,33 @@ def ceiling(eff):
     """Correlation, across scenarios, between the no-ending violation score and the harm effect on the verdict."""
     out = []
     v = eff[eff.question == "violation"]
-    for model in judged(eff):
+    for model in ordered(eff.model):
         g = v[v.model == model]
         out.append(dict(model=model, r_harm_payoff=np.corrcoef(g.baseline_violation, g.harm_payoff)[0, 1],
                         r_harm_none=np.corrcoef(g.baseline_violation, g.harm_none)[0, 1]))
     return out
 
 
-def judged(eff):
-    return tuple(m for m in ORDER if m in set(eff.model))
-
-
 def run(family="claude"):
     eff = scenario_effects(FAMILIES[family])
-    sfx = "" if family == "claude" else f"_{family}"
-    OUT.mkdir(parents=True, exist_ok=True)
-    eff.to_csv(OUT / f"moderators_scenario_effects{sfx}.csv", index=False, float_format="%.3f")
+    eff.to_csv(extra_table("moderators_scenario_effects", family), index=False, float_format="%.3f")
+    questions = [q for q in QUESTIONS if q in set(eff.question)]  # a model run on fewer questions
+    if len(questions) < len(QUESTIONS):
+        print(f"NOTE: no answers for {sorted(set(QUESTIONS) - set(questions))}; left out")
     rows, tests = [], []
     for column in ("rule_type", "harm_domain"):
-        for q in QUESTIONS:
+        for q in questions:
             rows += by_category(eff, column, q)
-            for model in judged(eff):
+            for model in ordered(eff.model):
                 rows += by_category(eff, column, q, model)
             stat, p = permutation_p(eff, column, q)
             tests.append(dict(code=column, question=q, spread=stat, p_permutation=p))
     cats = pd.DataFrame(rows)
-    cats.to_csv(OUT / f"moderators_by_category{sfx}.csv", index=False, float_format="%.3f")
+    cats.to_csv(extra_table("moderators_by_category", family), index=False, float_format="%.3f")
     tests = pd.DataFrame(tests)
-    tests.to_csv(OUT / f"moderators_tests{sfx}.csv", index=False, float_format="%.4f")
+    tests.to_csv(extra_table("moderators_tests", family), index=False, float_format="%.4f")
     ceil = pd.DataFrame(ceiling(eff))
-    ceil.to_csv(OUT / f"moderators_ceiling{sfx}.csv", index=False, float_format="%.3f")
+    ceil.to_csv(extra_table("moderators_ceiling", family), index=False, float_format="%.3f")
 
     pd.set_option("display.width", 200)
     for column in ("rule_type", "harm_domain"):

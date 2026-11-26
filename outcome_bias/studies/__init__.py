@@ -25,9 +25,9 @@ from outcome_bias.studies import (
     e3_consequences,
     e4_buried_violation,
     e5_intent,
+    followup_labelled_scale,
     followup_neutral_note,
     followup_rule_purpose,
-    followup_labelled_scale,
 )
 
 

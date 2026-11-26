@@ -29,12 +29,11 @@ import pandas as pd
 
 from outcome_bias import stimuli
 from outcome_bias.analysis.load import frame
-from outcome_bias.models import CLAUDE, FAMILIES, ORDER
-from outcome_bias.paths import EXTRA_TABLES
+from outcome_bias.models import CLAUDE, FAMILIES, ordered
+from outcome_bias.paths import extra_table
 from outcome_bias.prompts import agent_transcript, e5_transcript
 from outcome_bias.stats import boot
 
-OUT = EXTRA_TABLES
 STOP = set("""the and that this with from have been were their there they them then than what when which while
 would could should about after before into over under also only just more most some such very will shall
 agent agents policy note follow-up company customer customers team said says later""".split())
@@ -139,7 +138,7 @@ def unverbalised(df, none, cond, questions):
     """Per scenario and model: answers after `cond` whose reason does / does not mention it, minus no ending."""
     rows = []
     for q in questions:
-        for model in judged(df):
+        for model in ordered(df.model):
             d = df[(df.question == q) & (df.model == model)]
             base = d[d.cond == none].groupby("unit").answer.mean()
             c = d[d.cond == cond]
@@ -158,7 +157,7 @@ def unverbalised(df, none, cond, questions):
 def scenario_link(df, none, cond, question):
     """Across scenarios: does the model mention the ending more where the ending moves its answer more?"""
     rows = []
-    for model in judged(df):
+    for model in ordered(df.model):
         d = df[(df.question == question) & (df.model == model)]
         shift = d[d.cond == cond].groupby("unit").answer.mean() - d[d.cond == none].groupby("unit").answer.mean()
         rate = d[d.cond == cond].groupby("unit").mentioned.mean()
@@ -167,13 +166,7 @@ def scenario_link(df, none, cond, question):
     return pd.DataFrame(rows)
 
 
-def judged(df):
-    return tuple(m for m in ORDER if m in set(df.model))
-
-
 def run(family="claude"):
-    sfx = "" if family == "claude" else f"_{family}"
-    OUT.mkdir(parents=True, exist_ok=True)
     pd.set_option("display.width", 220)
     results = {}
     for exp, questions, conds in (("e3", ("violation", "blame", "risk"), ("harm", "payoff")),
@@ -185,9 +178,9 @@ def run(family="claude"):
         r = rates(df, none)
         uv = pd.concat([unverbalised(df, none, c, questions) for c in conds])
         link = pd.concat([scenario_link(df, none, c, q) for c in conds for q in questions])
-        r.to_csv(OUT / f"faithfulness_{exp}_rates{sfx}.csv", index=False, float_format="%.3f")
-        uv.to_csv(OUT / f"faithfulness_{exp}_shifts{sfx}.csv", index=False, float_format="%.2f")
-        link.to_csv(OUT / f"faithfulness_{exp}_scenario_link{sfx}.csv", index=False, float_format="%.3f")
+        r.to_csv(extra_table(f"faithfulness_{exp}_rates", family), index=False, float_format="%.3f")
+        uv.to_csv(extra_table(f"faithfulness_{exp}_shifts", family), index=False, float_format="%.2f")
+        link.to_csv(extra_table(f"faithfulness_{exp}_scenario_link", family), index=False, float_format="%.3f")
         results[exp] = (df, r, uv, link, fp)
         print(f"\n######## {exp.upper()}")
         print("false-positive mention rate on no-ending answers:", fp.round(3).to_dict())
